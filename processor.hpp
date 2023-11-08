@@ -30,9 +30,9 @@ struct Processor
                         this->in_queue.pop();
                     }
                     OutputMessage* outmessage = new OutputMessage(task);
+                    this->enqueue_out(outmessage);
                     pool_.enqueue([this, outmessage]{
                         outmessage->doSomething();
-                        this->enqueue_out(outmessage);
                     });
                 }
             });

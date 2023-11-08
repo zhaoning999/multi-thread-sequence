@@ -7,5 +7,5 @@ int main() {
         InputMessage* message = new InputMessage(i, r);
         processor.enqueue_in(message);
     }
-    sleep(100);
+    sleep(1000);
 }
