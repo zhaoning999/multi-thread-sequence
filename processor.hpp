@@ -13,7 +13,7 @@ struct Processor
     std::condition_variable condition_in;
     std::condition_variable condition_out;
     std::queue< InputMessage* > in_queue;
-    std::queue< OutputMessage* > out_queue;
+    std::queue< std::future<std::function<void()>> > out_queue;
     std::thread* t_in;
     std::thread* t_out;
     Processor():pool_(3){
@@ -30,15 +30,19 @@ struct Processor
                         this->in_queue.pop();
                     }
                     OutputMessage* outmessage = new OutputMessage(task);
-                    this->enqueue_out(outmessage);
-                    pool_.enqueue([this, outmessage]{
+                    std::future<std::function<void()>> res = pool_.enqueue([this, outmessage]{
                         outmessage->doSomething();
+                        std::function<void()> l = [outmessage]{
+                            outmessage->print();
+                        };
+                        return l;
                     });
+                    this->enqueue_out(std::move(res));
                 }
             });
         t_out = new std::thread([this]
             {
-                OutputMessage* task;
+                std::future<std::function<void()>> task;
                 for(;;)
                 {
                     {
@@ -48,7 +52,8 @@ struct Processor
                         task = std::move(this->out_queue.front());
                         this->out_queue.pop();
                     }
-                    task->print();
+                    auto f = task.get();
+                    f();
                 }
             });
     };
@@ -59,10 +64,10 @@ struct Processor
         }
         condition_in.notify_one();
     }
-    void enqueue_out( OutputMessage* outmessage) {
+    void enqueue_out( std::future<std::function<void()>>&& in) {
         {
             std::unique_lock<std::mutex> lock(queue_out);
-            out_queue.emplace(outmessage);
+            out_queue.emplace(std::move(in));
         }
         condition_out.notify_one();
     }

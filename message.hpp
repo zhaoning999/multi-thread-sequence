@@ -26,20 +26,20 @@ struct OutputMessage
     std::condition_variable condition;
     bool is_finish = false;
     void print() {
-        {
-            std::unique_lock<std::mutex> lock(this->queue_mutex);
-            this->condition.wait(lock,
-                [this]{ return this->is_finish;});
-        }
+        // {
+        //     std::unique_lock<std::mutex> lock(this->queue_mutex);
+        //     this->condition.wait(lock,
+        //         [this]{ return this->is_finish;});
+        // }
         inputMessage_->print();
     }
     void doSomething() {
         inputMessage_->sleep();
-        {
-            std::unique_lock<std::mutex> lock(this->queue_mutex);
-            is_finish = true;
-        }
-        condition.notify_one();
+        // {
+        //     std::unique_lock<std::mutex> lock(this->queue_mutex);
+        //     is_finish = true;
+        // }
+        // condition.notify_one();
     }
     OutputMessage(InputMessage* inputMessage): inputMessage_(inputMessage) {};
 };
